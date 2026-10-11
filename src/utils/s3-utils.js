@@ -19,6 +19,17 @@ const S3 = new S3Client({
     },
 });
 
+function logS3Failure(operation, context, error) {
+    console.error("S3 operation failed", {
+        operation,
+        ...context,
+        errorName: error.name,
+        errorMessage: error.message,
+        httpStatusCode: error.$metadata?.httpStatusCode,
+        requestId: error.$metadata?.requestId,
+    });
+}
+
 const uploadToS3 = async (fileBuffer, filename, mimeType) => {
     const upload = new Upload({
         client: S3,
@@ -37,24 +48,38 @@ const uploadToS3 = async (fileBuffer, filename, mimeType) => {
 const deleteFromS3 = async (imageUrlOrFilename) => {
     const filename = extractFilename(imageUrlOrFilename);
 
-    await S3.send(
-        new DeleteObjectCommand({
-            Bucket: bucketName,
-            Key: filename,
-        }),
-    );
+    try {
+        await S3.send(
+            new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: filename,
+            }),
+        );
+    } catch (error) {
+        logS3Failure("DeleteObject", { key: filename }, error);
+        throw error;
+    }
 };
 
 const copyInS3 = async (sourceFilename, destinationFilename, mimeType) => {
-    await S3.send(
-        new CopyObjectCommand({
-            Bucket: bucketName,
-            CopySource: `${bucketName}/${sourceFilename}`,
-            Key: destinationFilename,
-            ContentType: mimeType,
-            MetadataDirective: "REPLACE",
-        }),
-    );
+    try {
+        await S3.send(
+            new CopyObjectCommand({
+                Bucket: bucketName,
+                CopySource: `${bucketName}/${sourceFilename}`,
+                Key: destinationFilename,
+                ContentType: mimeType,
+                MetadataDirective: "REPLACE",
+            }),
+        );
+    } catch (error) {
+        logS3Failure(
+            "CopyObject",
+            { sourceKey: sourceFilename, destinationKey: destinationFilename },
+            error,
+        );
+        throw error;
+    }
     return `${S3_BASE_URL}${destinationFilename}`;
 };
 

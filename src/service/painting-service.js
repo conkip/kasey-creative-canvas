@@ -9,9 +9,10 @@ import {
 
 const toBoolean = (val) => val === "true" || val === true;
 
-function getUrlList(baseFilename) {
+function getUrlList(baseFilename, updatedAt) {
     if (!baseFilename) return [];
-    const baseUrl = `${s3.S3_BASE_URL}${baseFilename}`;
+    const version = updatedAt ? `?v=${new Date(updatedAt).getTime()}` : "";
+    const baseUrl = `${s3.S3_BASE_URL}${baseFilename}${version}`;
     const urls = [baseUrl];
     const [path, query] = baseUrl.split("?");
     const lastDot = path.lastIndexOf(".");
@@ -26,7 +27,7 @@ function getUrlList(baseFilename) {
 }
 
 function imageResponse(painting) {
-    const urls = getUrlList(painting.image);
+    const urls = getUrlList(painting.image, painting.updatedAt);
     return {
         ...painting,
         image: urls[0] || null,
@@ -159,10 +160,9 @@ async function updatePainting(
 ) {
     const parsedSlots = JSON.parse(slots || "[]");
     if (!parsedSlots[0] || parsedSlots[0].type === "empty") {
-        throw Object.assign(
-            new Error("First image slot is required"),
-            { status: 400 },
-        );
+        throw Object.assign(new Error("First image slot is required"), {
+            status: 400,
+        });
     }
 
     const SLOT_COUNT = Math.max(5, parsedSlots.length);
@@ -244,7 +244,7 @@ async function updatePainting(
     // UPLOAD NEW FILES
     // Done after renames so existing filenames are safely out of the way.
     // =========================
- 
+
     for (const { file, newFilename } of newFileSlots) {
         await processAndUpload(file, newFilename);
     }
