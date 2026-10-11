@@ -21,7 +21,14 @@ jobs:
                       export NVM_DIR="$HOME/.nvm"
                       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
                       cd ~/kasey-creative-canvas
-                      git pull origin main
+                      # Use a shallow fetch/reset to avoid growing the local .git history
+                      if [ -d ~/kasey-creative-canvas/.git ]; then
+                          git -C ~/kasey-creative-canvas fetch --depth=1 origin main
+                          git -C ~/kasey-creative-canvas reset --hard origin/main
+                      else
+                          # Fallback: clone a shallow copy from GitHub (expanded by Actions)
+                          git clone --depth=1 https://github.com/${{ github.repository }}.git ~/kasey-creative-canvas || true
+                      fi
                       rm -rf node_modules package-lock.json
                       npm install --production
                       pm2 restart kasey-creative-canvas

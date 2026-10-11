@@ -9,7 +9,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-import Painting from "../model/painting.js";
+import Painting from "../src/model/painting.js";
 
 dotenv.config();
 
