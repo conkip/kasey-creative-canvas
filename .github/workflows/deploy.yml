@@ -29,6 +29,5 @@ jobs:
                           # Fallback: clone a shallow copy from GitHub (expanded by Actions)
                           git clone --depth=1 https://github.com/${{ github.repository }}.git ~/kasey-creative-canvas || true
                       fi
-                      rm -rf node_modules package-lock.json
-                      npm install --production
+                      npm ci --omit=dev
                       pm2 restart kasey-creative-canvas
