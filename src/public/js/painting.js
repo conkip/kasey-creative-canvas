@@ -206,6 +206,12 @@ async function setupPainting() {
         priceElem.classList.add("display-none");
     }
 
+    const buyButton = document.getElementById("buy-button");
+    if (painting.paymentLink && !painting.sold) {
+        buyButton.href = painting.paymentLink;
+        buyButton.hidden = false;
+    }
+
     const descriptionElem = document.getElementById("description");
     if (painting.desc !== undefined) {
         descriptionElem.innerText = painting.desc;

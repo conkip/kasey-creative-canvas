@@ -48,9 +48,11 @@ async function setupPage() {
     document.getElementById("canvas").value = painting.canvas || "";
     document.getElementById("finish").value = painting.finish || "";
     document.getElementById("price").value = painting.price || "";
+    document.getElementById("payment-link").value = painting.paymentLink || "";
     document.getElementById("mult").checked = painting.mult;
     document.getElementById("framed").checked = painting.framed;
     document.getElementById("sold").checked = painting.sold;
+    syncSquareLinkVisibility();
     document.getElementById("desc").value = painting.desc || "";
 
     // populate image boxes — store the S3 URL so the server can rename
@@ -110,6 +112,9 @@ document
             document.getElementById("finish").value.trim(),
         );
         const price = document.getElementById("price").value.trim();
+        const paymentLink = document
+            .getElementById("payment-link")
+            .value.trim();
         const mult = document.getElementById("mult").checked;
         const framed = document.getElementById("framed").checked;
         const sold = document.getElementById("sold").checked;
@@ -149,6 +154,7 @@ document
         if (canvas) formData.append("canvas", canvas);
         if (finish) formData.append("finish", finish);
         if (price) formData.append("price", price);
+        formData.append("paymentLink", paymentLink);
         formData.append("mult", mult);
         formData.append("framed", framed);
         formData.append("sold", sold);
@@ -206,6 +212,16 @@ document
             showToast("Something went wrong", "toast-error");
         }
     });
+
+function syncSquareLinkVisibility() {
+    document.getElementById("payment-link-container").hidden =
+        document.getElementById("sold").checked;
+}
+
+document
+    .getElementById("sold")
+    .addEventListener("change", syncSquareLinkVisibility);
+syncSquareLinkVisibility();
 
 /* ── Upload box logic ── */
 

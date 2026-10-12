@@ -11,12 +11,19 @@ import authRoutes from "./routes/auth-routes.js";
 import userRoutes from "./routes/user-routes.js";
 import paintingRoutes from "./routes/painting-routes.js";
 import adminRoutes from "./routes/admin-routes.js";
+import stripeWebhookController from "./controller/stripe-webhook-controller.js";
 
 const app = express();
 
 const port = process.env.PORT || 3000;
 const domainName = process.env.DOMAIN || "127.0.0.1";
 const dbURL = process.env.MONGODB_URL;
+
+app.post(
+    "/webhooks/stripe",
+    express.raw({ type: "application/json" }),
+    stripeWebhookController.handle,
+);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

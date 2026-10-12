@@ -9,6 +9,47 @@ import {
 
 const toBoolean = (val) => val === "true" || val === true;
 
+function normalizePaymentLink(value) {
+    if (!value?.trim()) return undefined;
+
+    let url;
+    try {
+        url = new URL(value.trim());
+    } catch {
+        throw Object.assign(new Error("Payment link must be a valid URL"), {
+            status: 400,
+        });
+    }
+
+    if (url.protocol !== "https:") {
+        throw Object.assign(new Error("Payment link must use HTTPS"), {
+            status: 400,
+        });
+    }
+
+    url.searchParams.delete("client_reference_id");
+    return url.toString();
+}
+
+function buildPaymentUrl(paymentLink, paintingId) {
+    if (!paymentLink) return undefined;
+
+    const url = new URL(paymentLink);
+    if (
+        ["buy.stripe.com", "checkout.stripe.com"].includes(url.hostname) &&
+        process.env.STRIPE_REFERENCE_SECRET
+    ) {
+        const id = String(paintingId);
+        const signature = crypto
+            .createHmac("sha256", process.env.STRIPE_REFERENCE_SECRET)
+            .update(id)
+            .digest("hex");
+        url.searchParams.set("client_reference_id", `${id}_${signature}`);
+    }
+
+    return url.toString();
+}
+
 function getUrlList(baseFilename, updatedAt) {
     if (!baseFilename) return [];
     const version = updatedAt ? `?v=${new Date(updatedAt).getTime()}` : "";
@@ -28,10 +69,15 @@ function getUrlList(baseFilename, updatedAt) {
 
 function imageResponse(painting) {
     const urls = getUrlList(painting.image, painting.updatedAt);
+    const { squareLink, ...paintingData } = painting;
     return {
-        ...painting,
+        ...paintingData,
         image: urls[0] || null,
         images: urls,
+        paymentLink: buildPaymentUrl(
+            painting.paymentLink || squareLink,
+            painting._id,
+        ),
     };
 }
 
@@ -98,6 +144,7 @@ async function createPainting({
     finish,
     desc,
     price,
+    paymentLink,
     mult,
     framed,
     sold,
@@ -130,6 +177,7 @@ async function createPainting({
         finish: normalizeString(finish),
         desc: desc ? desc.trim() : undefined,
         price: price ? Number(price) : undefined,
+        paymentLink: normalizePaymentLink(paymentLink),
         mult: toBoolean(mult),
         framed: toBoolean(framed),
         sold: toBoolean(sold),
@@ -151,6 +199,7 @@ async function updatePainting(
         finish,
         desc,
         price,
+        paymentLink,
         mult,
         framed,
         sold,
@@ -286,12 +335,19 @@ async function updatePainting(
     painting.desc = desc !== undefined ? desc.trim() : painting.desc;
 
     painting.price = price ? Number(price) : painting.price;
+    if (paymentLink !== undefined) {
+        painting.paymentLink = normalizePaymentLink(paymentLink);
+    }
 
     painting.mult = toBoolean(mult);
     painting.framed = toBoolean(framed);
     painting.sold = toBoolean(sold);
 
     await painting.save();
+    await Painting.updateOne(
+        { _id: painting._id },
+        { $unset: { squareLink: "" } },
+    );
 
     return imageResponse(painting.toObject());
 }

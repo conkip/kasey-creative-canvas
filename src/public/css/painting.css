@@ -69,6 +69,22 @@
     flex-direction: column;
 }
 
+.buy-button {
+    display: inline-block;
+    width: fit-content;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    color: var(--main-bg-color);
+    font: var(--links);
+    text-align: center;
+    text-decoration: none;
+}
+
+#buy-button[hidden] {
+    display: none;
+}
+
 .display-none {
     display: none;
 }
