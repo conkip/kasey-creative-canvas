@@ -136,7 +136,7 @@ document
 
         // required first slot image
         if (imageSlots[0]?.type === "empty") {
-            showToast("First image slot is required", "toast-error");
+            showToast("Must add an image to the first box", "toast-error");
             return;
         }
 

@@ -263,64 +263,45 @@ function updateHeart() {
 
 // when the heart is clicked add or remove it from the users favorites list
 async function heartClicked() {
-    if (curUser === null) {
-        if (heart.style.fill === "rgb(75, 75, 75)") {
-            heart.style.fill = "var(--red)";
+    const isLiked = heart.style.fill !== "rgb(75, 75, 75)";
+    const method = isLiked ? "DELETE" : "POST";
+    const route = curUser === null ? "/user/guest/likes" : "/user/me/likes";
 
-            heart.style.transform = "scale(1.5)";
-            setTimeout(() => {
-                heart.style.transform = "";
-            }, 200);
-
-            fetch(`/user/guest/likes/${curPainting.name}`, {
-                method: "POST",
+    try {
+        const response = await fetch(
+            `${route}/${encodeURIComponent(curPainting.name)}`,
+            {
+                method,
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
-                credentials: "include",
-            });
+                ...(curUser === null ? { credentials: "include" } : {}),
+            },
+        );
 
-            showToast("Like added", "toast-success");
-        } else {
-            heart.style.fill = "rgb(75, 75, 75)";
-            fetch(`/user/guest/likes/${curPainting.name}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                credentials: "include",
-            });
-
-            showToast("Like removed", "toast-success");
+        if (!response.ok) {
+            throw new Error(
+                `Like request failed with status ${response.status}`,
+            );
         }
-    } else {
-        if (heart.style.fill === "rgb(75, 75, 75)") {
-            heart.style.fill = "var(--red)";
 
+        heart.style.fill = isLiked ? "rgb(75, 75, 75)" : "var(--red)";
+        if (!isLiked) {
             heart.style.transform = "scale(1.4)";
             setTimeout(() => {
                 heart.style.transform = "";
             }, 200);
-
-            fetch(`/user/me/likes/${curPainting.name}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-
-            showToast("Like added", "toast-success");
-        } else {
-            heart.style.fill = "rgb(75, 75, 75)";
-
-            fetch(`/user/me/likes/${curPainting.name}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-
-            showToast("Like removed", "toast-success");
         }
+
+        showToast(
+            isLiked ? "Unliked painting" : "Liked painting",
+            "toast-success",
+        );
+    } catch (error) {
+        console.error("Like request error:", error);
+        showToast(
+            isLiked ? "Failed to unlike painting" : "Failed to like painting",
+            "toast-error",
+        );
     }
 }

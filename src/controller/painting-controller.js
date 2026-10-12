@@ -1,5 +1,17 @@
 import paintingService from "../service/painting-service.js";
 
+function sendPaintingError(res, err, fallbackMessage) {
+    const status = err.status || 500;
+    const message =
+        status >= 500
+            ? err.isS3Error || status === 502
+                ? "S3 error"
+                : "Server error"
+            : err.message || fallbackMessage;
+
+    res.status(status).send(message);
+}
+
 function parsePaintingBody(body) {
     const {
         name,
@@ -57,9 +69,7 @@ async function createPainting(req, res) {
         });
         res.status(201).json(painting);
     } catch (err) {
-        res.status(err.status || 500).send(
-            err.message || "Error adding painting",
-        );
+        sendPaintingError(res, err, "Error adding painting");
     }
 }
 
@@ -73,15 +83,13 @@ async function updatePainting(req, res) {
             ...parsePaintingBody(req.body),
             newName,
             files: req.files,
-            slots: req.body.slots
+            slots: req.body.slots,
         });
         if (!painting)
             return res.status(404).json({ error: "Painting not found" });
         res.json(painting);
     } catch (err) {
-        res.status(err.status || 500).send(
-            err.message || "Error updating painting",
-        );
+        sendPaintingError(res, err, "Error updating painting");
     }
 }
 

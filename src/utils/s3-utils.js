@@ -20,6 +20,7 @@ const S3 = new S3Client({
 });
 
 function logS3Failure(operation, context, error) {
+    error.isS3Error = true;
     console.error("S3 operation failed", {
         operation,
         ...context,

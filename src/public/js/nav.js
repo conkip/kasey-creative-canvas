@@ -41,32 +41,29 @@ function logout() {
 
 // Delete account function
 async function deleteAccount() {
-    // fetch name before deleting
-    let name = "";
     try {
-        const res = await fetch("/user/me", {
+        const response = await fetch("/auth/delete", {
+            method: "DELETE",
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
         });
-        if (res.ok) {
-            const data = await res.json();
-            name = data.name || data.username || "";
-        }
-    } catch {}
 
-    await fetch("/auth/delete", {
-        method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-    });
+        if (!response.ok) {
+            showToast("Failed to delete account", "toast-error");
+            return;
+        }
+    } catch (error) {
+        console.error("Account deletion error:", error);
+        showToast("Failed to delete account", "toast-error");
+        return;
+    }
 
     localStorage.removeItem("token");
     localStorage.setItem(
         "pendingToast",
         JSON.stringify({
-            message: `User ${name} was deleted`,
+            message: "Account deleted",
             className: "toast-success",
         }),
     );
