@@ -9,6 +9,18 @@ let curPainting = null;
 const heart = document.getElementById("heart-icon");
 heart.onclick = heartClicked;
 
+function isStripePaymentLink(paymentLink) {
+    if (!paymentLink) return false;
+
+    try {
+        return ["buy.stripe.com", "checkout.stripe.com"].includes(
+            new URL(paymentLink).hostname,
+        );
+    } catch {
+        return false;
+    }
+}
+
 // this is to make it visible after everything loads up so it doesn't look buggy
 const main = document.querySelector("main");
 
@@ -207,7 +219,11 @@ async function setupPainting() {
     }
 
     const buyButton = document.getElementById("buy-button");
-    if (painting.paymentLink && !painting.sold) {
+    if (
+        painting.paymentLink &&
+        !painting.sold &&
+        !isStripePaymentLink(painting.paymentLink)
+    ) {
         buyButton.href = painting.paymentLink;
         buyButton.hidden = false;
     }
